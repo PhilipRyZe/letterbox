@@ -1,0 +1,17 @@
+name = "letterbox"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "public"
+
+# D1-Datenbank-Binding. database_id nach dem Anlegen der DB
+# (siehe README) hier eintragen.
+[[d1_databases]]
+binding = "DB"
+database_name = "letterbox-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# Optional: zusätzliche Absicherung der Admin-API. Wenn gesetzt, muss die
+# von Cloudflare Access bestätigte E-Mail exakt hiermit übereinstimmen.
+# Kann auch leer/weg gelassen werden, wenn deine Access-Policy schon auf
+# genau eine E-Mail-Adresse eingeschränkt ist.
+[vars]
+ADMIN_EMAIL = "deine-email@example.com"
