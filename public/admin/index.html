@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Letterbox – Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../style.css" />
+<link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+<header class="site-head">
+  <h1 class="wordmark">Letterbox <span style="color:var(--muted);font-family:Inter;font-size:15px;font-weight:400;">/ Admin</span></h1>
+  <a class="filter" href="/" style="text-decoration:none;">← zur Seite</a>
+</header>
+
+<main class="admin-main">
+  <section class="panel">
+    <h2>Neuer Eintrag</h2>
+    <form id="create-form" class="item-form">
+      <div class="row">
+        <select name="type" required>
+          <option value="">Typ wählen…</option>
+          <option value="film">Film</option>
+          <option value="serie">Serie</option>
+          <option value="game">Game</option>
+        </select>
+        <input name="year" type="number" placeholder="Jahr" min="1900" max="2100" />
+      </div>
+      <input name="title" type="text" placeholder="Titel" required />
+      <input name="cover_url" type="url" placeholder="Cover-Bild-URL (optional)" />
+      <textarea name="description" rows="2" placeholder="Kurzbeschreibung (optional)"></textarea>
+      <div class="row">
+        <select name="host_rating">
+          <option value="">Deine Bewertung…</option>
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <textarea name="host_note" rows="2" placeholder="Deine kurze Meinung (optional)"></textarea>
+      <button type="submit">Anlegen</button>
+      <p class="msg" id="create-msg"></p>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Vorhandene Einträge</h2>
+    <div id="admin-list" class="admin-list"></div>
+  </section>
+</main>
+
+<script src="admin.js"></script>
+</body>
+</html>
