@@ -16,6 +16,7 @@ const TYPE_LABEL = { film: "Film", serie: "Serie", game: "Game" };
 const shelfEl = document.getElementById("shelf");
 const emptyStateEl = document.getElementById("empty-state");
 const searchEl = document.getElementById("search");
+const sortEl = document.getElementById("sort");
 const filtersEl = document.getElementById("filters");
 const overlayEl = document.getElementById("overlay");
 const ticketBodyEl = document.getElementById("ticket-body");
@@ -33,7 +34,9 @@ async function loadItems() {
 
 function renderShelf() {
   const query = searchEl.value.trim().toLowerCase();
-  const items = allItems.filter((i) => i.title.toLowerCase().includes(query));
+  const items = allItems
+    .filter((i) => i.title.toLowerCase().includes(query))
+    .sort(sortComparator(sortEl.value));
 
   shelfEl.innerHTML = "";
   emptyStateEl.hidden = items.length > 0;
@@ -73,6 +76,29 @@ filtersEl.addEventListener("click", (e) => {
 });
 
 searchEl.addEventListener("input", renderShelf);
+sortEl.addEventListener("change", renderShelf);
+
+function sortComparator(mode) {
+  switch (mode) {
+    case "oldest":
+      return (a, b) => new Date(a.created_at) - new Date(b.created_at);
+    case "title-asc":
+      return (a, b) => a.title.localeCompare(b.title, "de");
+    case "title-desc":
+      return (a, b) => b.title.localeCompare(a.title, "de");
+    case "year-desc":
+      return (a, b) => (b.year || 0) - (a.year || 0);
+    case "year-asc":
+      return (a, b) => (a.year || 9999) - (b.year || 9999);
+    case "rating":
+      return (a, b) => (b.avg_rating || 0) - (a.avg_rating || 0);
+    case "likes":
+      return (a, b) => (b.like_count || 0) - (a.like_count || 0);
+    case "newest":
+    default:
+      return (a, b) => new Date(b.created_at) - new Date(a.created_at);
+  }
+}
 
 document.getElementById("close-overlay").addEventListener("click", closeTicket);
 overlayEl.addEventListener("click", (e) => {
