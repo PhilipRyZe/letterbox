@@ -102,6 +102,13 @@
   padding: 4px 4px 4px 50px;
 }
 
+.admin-edit {
+  padding: 4px 4px 4px 50px;
+}
+.admin-edit .item-form {
+  margin-bottom: 4px;
+}
+
 .admin-comment {
   display: flex;
   justify-content: space-between;

@@ -2,6 +2,8 @@ const form = document.getElementById("create-form");
 const msgEl = document.getElementById("create-msg");
 const listEl = document.getElementById("admin-list");
 
+let currentItems = [];
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const fd = new FormData(form);
@@ -40,10 +42,10 @@ function setMsg(text, kind) {
 async function loadList() {
   const res = await fetch("/api/items");
   const data = await res.json();
-  const items = data.items || [];
+  currentItems = data.items || [];
 
-  listEl.innerHTML = items.length
-    ? items.map(rowHtml).join("")
+  listEl.innerHTML = currentItems.length
+    ? currentItems.map(rowHtml).join("")
     : `<p style="color:var(--muted);font-size:14px;">Noch keine Einträge.</p>`;
 
   listEl.querySelectorAll("[data-delete]").forEach((btn) => {
@@ -54,6 +56,9 @@ async function loadList() {
   });
   listEl.querySelectorAll("[data-comments]").forEach((btn) => {
     btn.addEventListener("click", () => toggleComments(btn.dataset.comments));
+  });
+  listEl.querySelectorAll("[data-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => toggleEdit(btn.dataset.edit));
   });
 }
 
@@ -68,13 +73,93 @@ function rowHtml(item) {
           <div class="title">${escapeHtml(item.title)} ${item.year ? `(${item.year})` : ""}</div>
           <div class="sub">${item.type} · Host: ${item.host_rating ?? "–"} · Besucher-Ø: ${item.avg_rating ?? "–"} (${item.rating_count})</div>
         </div>
+        <button data-edit="${item.id}">Bearbeiten</button>
         <button data-comments="${item.id}">Kommentare (${item.comment_count ?? 0})</button>
         <button data-edit-rating="${item.id}">Bewertung</button>
         <button class="danger" data-delete="${item.id}">Löschen</button>
       </div>
+      <div class="admin-edit" id="edit-${item.id}" hidden></div>
       <div class="admin-comments" id="comments-${item.id}" hidden></div>
     </div>
   `;
+}
+
+function toggleEdit(id) {
+  const panel = document.getElementById(`edit-${id}`);
+  const wasHidden = panel.hidden;
+  panel.hidden = !wasHidden;
+  if (wasHidden) {
+    const item = currentItems.find((i) => i.id === id);
+    panel.innerHTML = editFormHtml(item);
+    panel.querySelector("form").addEventListener("submit", (e) => saveEdit(e, id));
+    panel.querySelector("[data-cancel-edit]").addEventListener("click", () => {
+      panel.hidden = true;
+    });
+  }
+}
+
+function editFormHtml(item) {
+  return `
+    <form class="item-form">
+      <div class="row">
+        <select name="type" required>
+          <option value="film" ${item.type === "film" ? "selected" : ""}>Film</option>
+          <option value="serie" ${item.type === "serie" ? "selected" : ""}>Serie</option>
+          <option value="game" ${item.type === "game" ? "selected" : ""}>Game</option>
+        </select>
+        <input name="year" type="number" placeholder="Jahr" min="1900" max="2100" value="${item.year ?? ""}" />
+      </div>
+      <input name="title" type="text" placeholder="Titel" required value="${escapeAttr(item.title)}" />
+      <input name="cover_url" type="url" placeholder="Cover-Bild-URL (optional)" value="${escapeAttr(item.cover_url || "")}" />
+      <textarea name="description" rows="2" placeholder="Kurzbeschreibung (optional)">${escapeHtml(item.description || "")}</textarea>
+      <div class="row">
+        <select name="host_rating">
+          <option value="">Deine Bewertung…</option>
+          ${Array.from({ length: 10 }, (_, i) => i + 1)
+            .map((n) => `<option value="${n}" ${item.host_rating === n ? "selected" : ""}>${n}</option>`)
+            .join("")}
+        </select>
+      </div>
+      <textarea name="host_note" rows="2" placeholder="Deine kurze Meinung (optional)">${escapeHtml(item.host_note || "")}</textarea>
+      <div class="row" style="gap:10px;">
+        <button type="submit">Speichern</button>
+        <button type="button" data-cancel-edit style="background:none;border:1px solid var(--line);color:var(--muted);">Abbrechen</button>
+      </div>
+      <p class="msg" data-edit-msg></p>
+    </form>
+  `;
+}
+
+async function saveEdit(e, id) {
+  e.preventDefault();
+  const formEl = e.currentTarget;
+  const msgEl = formEl.querySelector("[data-edit-msg]");
+  const fd = new FormData(formEl);
+  const body = {
+    type: fd.get("type"),
+    title: fd.get("title"),
+    year: fd.get("year") ? Number(fd.get("year")) : null,
+    cover_url: fd.get("cover_url") || null,
+    description: fd.get("description") || null,
+    host_rating: fd.get("host_rating") ? Number(fd.get("host_rating")) : null,
+    host_note: fd.get("host_note") || null,
+  };
+
+  msgEl.textContent = "Speichere…";
+  msgEl.className = "msg";
+  const res = await fetch(`/admin/api/items/${id}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (res.ok) {
+    await loadList();
+  } else {
+    const data = await res.json().catch(() => ({}));
+    msgEl.textContent = data.error || "Fehler beim Speichern.";
+    msgEl.className = "msg is-error";
+  }
 }
 
 async function toggleComments(id) {
@@ -148,5 +233,6 @@ function escapeHtml(str) {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c]));
 }
+function escapeAttr(str) { return escapeHtml(str); }
 
 loadList();
