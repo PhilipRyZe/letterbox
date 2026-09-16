@@ -4,6 +4,7 @@ import {
   handleGetItem,
   handleLike,
   handleRating,
+  handleClearRating,
   handleListComments,
   handleAddComment,
 } from "./handlers/items.js";
@@ -11,6 +12,7 @@ import {
   handleCreateItem,
   handleUpdateItem,
   handleDeleteItem,
+  handleDeleteComment,
 } from "./handlers/admin.js";
 
 export default {
@@ -39,6 +41,9 @@ export default {
       if (ratingMatch && method === "POST") {
         return handleRating(request, env, ratingMatch[1]);
       }
+      if (ratingMatch && method === "DELETE") {
+        return handleClearRating(request, env, ratingMatch[1]);
+      }
 
       const commentsMatch = pathname.match(/^\/api\/items\/([^/]+)\/comments$/);
       if (commentsMatch && method === "GET") {
@@ -59,6 +64,11 @@ export default {
       }
       if (adminItemMatch && method === "DELETE") {
         return handleDeleteItem(request, env, adminItemMatch[1]);
+      }
+
+      const adminCommentMatch = pathname.match(/^\/admin\/api\/comments\/([^/]+)$/);
+      if (adminCommentMatch && method === "DELETE") {
+        return handleDeleteComment(request, env, adminCommentMatch[1]);
       }
 
       // ---- alles andere: statische Datei aus /public ausliefern ----

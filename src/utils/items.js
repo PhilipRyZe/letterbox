@@ -7,10 +7,12 @@ const LIST_SQL = `
     i.host_rating, i.host_note, i.created_at,
     COUNT(DISTINCT l.visitor_id) AS like_count,
     COUNT(DISTINCT r.visitor_id) AS rating_count,
+    COUNT(DISTINCT c.id) AS comment_count,
     AVG(r.rating) AS avg_rating
   FROM items i
   LEFT JOIN likes l ON l.item_id = i.id
   LEFT JOIN ratings r ON r.item_id = i.id
+  LEFT JOIN comments c ON c.item_id = i.id
 `;
 
 export async function listItems(db, { type } = {}) {
@@ -59,6 +61,7 @@ function shapeItem(row) {
     created_at: row.created_at,
     like_count: row.like_count || 0,
     rating_count: row.rating_count || 0,
+    comment_count: row.comment_count || 0,
     avg_rating: row.avg_rating ? Math.round(row.avg_rating * 10) / 10 : null,
   };
 }

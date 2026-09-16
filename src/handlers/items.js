@@ -31,21 +31,17 @@ export async function handleLike(request, env, id) {
     .bind(id, visitorId)
     .first();
 
-  if (existing) {
-    await env.DB.prepare("DELETE FROM likes WHERE item_id = ? AND visitor_id = ?")
-      .bind(id, visitorId)
-      .run();
-  } else {
-    await env.DB.prepare("INSERT INTO likes (item_id, visitor_id) VALUES (?, ?)")
-      .bind(id, visitorId)
-      .run();
-  }
-
-  const count = await env.DB.prepare(
+  // Toggle-Statement und Count in EINEM Roundtrip zu D1 statt zwei
+  // separaten Anfragen – spart Latenz gegenüber der vorherigen Version.
+  const toggleStmt = existing
+    ? env.DB.prepare("DELETE FROM likes WHERE item_id = ? AND visitor_id = ?").bind(id, visitorId)
+    : env.DB.prepare("INSERT INTO likes (item_id, visitor_id) VALUES (?, ?)").bind(id, visitorId);
+  const countStmt = env.DB.prepare(
     "SELECT COUNT(*) AS n FROM likes WHERE item_id = ?"
-  )
-    .bind(id)
-    .first();
+  ).bind(id);
+
+  const [, countResult] = await env.DB.batch([toggleStmt, countStmt]);
+  const count = countResult.results[0];
 
   return json({ liked: !existing, like_count: count.n });
 }
@@ -77,6 +73,32 @@ export async function handleRating(request, env, id) {
 
   return json({
     my_rating: rating,
+    avg_rating: agg.avg_rating ? Math.round(agg.avg_rating * 10) / 10 : null,
+    rating_count: agg.n,
+  });
+}
+
+// DELETE /api/items/:id/rating   Body: { visitorId }
+// Löscht die eigene Bewertung wieder (Auswahl von "–" im Dropdown).
+export async function handleClearRating(request, env, id) {
+  const body = await readJson(request);
+  const visitorId = body?.visitorId;
+  if (!visitorId) return error("visitorId fehlt.");
+
+  await env.DB.prepare(
+    "DELETE FROM ratings WHERE item_id = ? AND visitor_id = ?"
+  )
+    .bind(id, visitorId)
+    .run();
+
+  const agg = await env.DB.prepare(
+    "SELECT AVG(rating) AS avg_rating, COUNT(*) AS n FROM ratings WHERE item_id = ?"
+  )
+    .bind(id)
+    .first();
+
+  return json({
+    my_rating: null,
     avg_rating: agg.avg_rating ? Math.round(agg.avg_rating * 10) / 10 : null,
     rating_count: agg.n,
   });

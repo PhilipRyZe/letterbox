@@ -95,6 +95,47 @@
 .admin-row button:hover { color: var(--ink); }
 .admin-row button.danger:hover { color: #e08a7a; border-color: #e08a7a; }
 
+.admin-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 4px 4px 50px;
+}
+
+.admin-comment {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.admin-comment .who {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.admin-comment p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.admin-comment button {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 100px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.admin-comment button:hover { color: #e08a7a; border-color: #e08a7a; }
+
 @media (max-width: 780px) {
   .admin-main { grid-template-columns: 1fr; padding: 22px 20px 60px; }
 }

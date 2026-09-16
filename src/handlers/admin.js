@@ -75,3 +75,13 @@ export async function handleDeleteItem(request, env, id) {
   if (result.meta.changes === 0) return error("Nicht gefunden.", 404);
   return json({ ok: true });
 }
+
+// DELETE /admin/api/comments/:id
+export async function handleDeleteComment(request, env, id) {
+  const denied = requireAdmin(request, env);
+  if (denied) return denied;
+
+  const result = await env.DB.prepare("DELETE FROM comments WHERE id = ?").bind(id).run();
+  if (result.meta.changes === 0) return error("Nicht gefunden.", 404);
+  return json({ ok: true });
+}

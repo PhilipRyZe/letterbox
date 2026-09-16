@@ -52,22 +52,73 @@ async function loadList() {
   listEl.querySelectorAll("[data-edit-rating]").forEach((btn) => {
     btn.addEventListener("click", () => editHostRating(btn.dataset.editRating));
   });
+  listEl.querySelectorAll("[data-comments]").forEach((btn) => {
+    btn.addEventListener("click", () => toggleComments(btn.dataset.comments));
+  });
 }
 
 function rowHtml(item) {
   return `
-    <div class="admin-row">
-      <div class="thumb">
-        ${item.cover_url ? `<img src="${item.cover_url}" alt="" />` : ""}
+    <div class="admin-row-wrap">
+      <div class="admin-row">
+        <div class="thumb">
+          ${item.cover_url ? `<img src="${item.cover_url}" alt="" />` : ""}
+        </div>
+        <div class="info">
+          <div class="title">${escapeHtml(item.title)} ${item.year ? `(${item.year})` : ""}</div>
+          <div class="sub">${item.type} · Host: ${item.host_rating ?? "–"} · Besucher-Ø: ${item.avg_rating ?? "–"} (${item.rating_count})</div>
+        </div>
+        <button data-comments="${item.id}">Kommentare (${item.comment_count ?? 0})</button>
+        <button data-edit-rating="${item.id}">Bewertung</button>
+        <button class="danger" data-delete="${item.id}">Löschen</button>
       </div>
-      <div class="info">
-        <div class="title">${escapeHtml(item.title)} ${item.year ? `(${item.year})` : ""}</div>
-        <div class="sub">${item.type} · Host: ${item.host_rating ?? "–"} · Besucher-Ø: ${item.avg_rating ?? "–"} (${item.rating_count})</div>
-      </div>
-      <button data-edit-rating="${item.id}">Bewertung</button>
-      <button class="danger" data-delete="${item.id}">Löschen</button>
+      <div class="admin-comments" id="comments-${item.id}" hidden></div>
     </div>
   `;
+}
+
+async function toggleComments(id) {
+  const panel = document.getElementById(`comments-${id}`);
+  const wasHidden = panel.hidden;
+  panel.hidden = !wasHidden;
+  if (wasHidden) {
+    await loadComments(id);
+  }
+}
+
+async function loadComments(id) {
+  const panel = document.getElementById(`comments-${id}`);
+  panel.innerHTML = `<p style="color:var(--muted);font-size:13px;">Lade…</p>`;
+
+  const res = await fetch(`/api/items/${id}/comments`);
+  const data = await res.json();
+  const comments = data.comments || [];
+
+  panel.innerHTML = comments.length
+    ? comments.map(commentRowHtml).join("")
+    : `<p style="color:var(--muted);font-size:13px;">Keine Kommentare.</p>`;
+
+  panel.querySelectorAll("[data-delete-comment]").forEach((btn) => {
+    btn.addEventListener("click", () => deleteComment(btn.dataset.deleteComment, id));
+  });
+}
+
+function commentRowHtml(c) {
+  return `
+    <div class="admin-comment">
+      <div>
+        <span class="who">${escapeHtml(c.name)}</span>
+        <p>${escapeHtml(c.text)}</p>
+      </div>
+      <button class="danger" data-delete-comment="${c.id}">Löschen</button>
+    </div>
+  `;
+}
+
+async function deleteComment(commentId, itemId) {
+  if (!confirm("Kommentar wirklich löschen?")) return;
+  await fetch(`/admin/api/comments/${commentId}`, { method: "DELETE" });
+  loadComments(itemId);
 }
 
 async function editHostRating(id) {

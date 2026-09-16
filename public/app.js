@@ -164,26 +164,42 @@ function renderTicket(item) {
 }
 
 async function toggleLike(e) {
-  const id = e.currentTarget.dataset.id;
+  // Wichtig: e.currentTarget VOR dem await sichern. Der Browser setzt
+  // currentTarget zurück, sobald der Event-Handler synchron durchgelaufen
+  // ist – bei async-Funktionen also schon nach dem ersten await. Danach
+  // ist e.currentTarget null, ein Zugriff darauf wirft einen (bisher
+  // unbemerkten) Fehler und die UI aktualisiert sich nicht mehr, obwohl
+  // der Like serverseitig längst gespeichert wurde.
+  const btn = e.currentTarget;
+  const id = btn.dataset.id;
+
   const res = await fetch(`/api/items/${id}/like`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ visitorId: VISITOR_ID }),
   });
   const data = await res.json();
-  e.currentTarget.classList.toggle("is-liked", data.liked);
-  e.currentTarget.textContent = data.liked ? "♥ Gefällt dir" : "♡ Gefällt mir";
+  btn.classList.toggle("is-liked", data.liked);
+  btn.textContent = data.liked ? "♥ Gefällt dir" : "♡ Gefällt mir";
 }
 
 async function submitRating(e) {
-  const id = e.currentTarget.dataset.id;
-  const rating = Number(e.currentTarget.value);
-  if (!rating) return;
-  const res = await fetch(`/api/items/${id}/rating`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ visitorId: VISITOR_ID, rating }),
-  });
+  const select = e.currentTarget; // vor dem await sichern, siehe toggleLike
+  const id = select.dataset.id;
+  const rawValue = select.value; // "" wenn "–" gewählt wurde
+
+  const res = rawValue
+    ? await fetch(`/api/items/${id}/rating`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ visitorId: VISITOR_ID, rating: Number(rawValue) }),
+      })
+    : await fetch(`/api/items/${id}/rating`, {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ visitorId: VISITOR_ID }),
+      });
+
   const data = await res.json();
   const valueEl = document.querySelectorAll(".verdict .value")[1];
   if (valueEl) valueEl.textContent = data.avg_rating ? data.avg_rating + "/10" : "–";
@@ -216,7 +232,7 @@ function renderComments(comments) {
 
 async function submitComment(e) {
   e.preventDefault();
-  const form = e.currentTarget;
+  const form = e.currentTarget; // wird vor dem await genutzt/gesichert, ok
   const id = form.dataset.id;
   const name = form.elements.name.value.trim();
   const text = form.elements.text.value.trim();
