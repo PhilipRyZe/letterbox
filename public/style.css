@@ -186,6 +186,10 @@ main { padding: 32px 40px 80px; }
   z-index: 50;
 }
 
+.overlay[hidden] {
+  display: none;
+}
+
 .ticket {
   position: relative;
   width: min(760px, 100%);
