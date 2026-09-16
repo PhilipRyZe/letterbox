@@ -106,7 +106,8 @@ main { padding: 32px 40px 80px; }
 .shelf {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 22px 18px;
+  gap: 28px 20px;
+  align-items: start;
 }
 
 .cover-card {
@@ -170,18 +171,23 @@ main { padding: 32px 40px 80px; }
   border: 1px solid var(--accent);
 }
 
-.cover-meta { margin-top: 9px; }
+.cover-meta { margin-top: 11px; }
 
 .cover-meta .title {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.3;
+  min-height: 2.6em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .cover-meta .sub {
   font-size: 12.5px;
   color: var(--muted);
-  margin-top: 2px;
+  margin-top: 5px;
 }
 
 /* ---------- Detailansicht (Ticket) ---------- */
