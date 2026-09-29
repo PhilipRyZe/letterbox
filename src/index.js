@@ -14,6 +14,15 @@ import {
   handleDeleteItem,
   handleDeleteComment,
 } from "./handlers/admin.js";
+import {
+  handleUsage,
+  handleUploadInit,
+  handleUploadPart,
+  handleUploadComplete,
+  handleUploadAbort,
+  handleUploadPoster,
+  handleUploadDelete,
+} from "./handlers/upload.js";
 
 export default {
   async fetch(request, env) {
@@ -69,6 +78,29 @@ export default {
       const adminCommentMatch = pathname.match(/^\/admin\/api\/comments\/([^/]+)$/);
       if (adminCommentMatch && method === "DELETE") {
         return handleDeleteComment(request, env, adminCommentMatch[1]);
+      }
+
+      // ---- Admin: Video-Upload in den Edits-Bucket ----
+      if (pathname === "/admin/api/edits-usage" && method === "GET") {
+        return handleUsage(request, env);
+      }
+      if (pathname === "/admin/api/upload/init" && method === "POST") {
+        return handleUploadInit(request, env);
+      }
+      if (pathname === "/admin/api/upload/part" && method === "PUT") {
+        return handleUploadPart(request, env, url);
+      }
+      if (pathname === "/admin/api/upload/complete" && method === "POST") {
+        return handleUploadComplete(request, env);
+      }
+      if (pathname === "/admin/api/upload/abort" && method === "POST") {
+        return handleUploadAbort(request, env);
+      }
+      if (pathname === "/admin/api/upload/poster" && method === "POST") {
+        return handleUploadPoster(request, env);
+      }
+      if (pathname === "/admin/api/upload/delete" && method === "POST") {
+        return handleUploadDelete(request, env);
       }
 
       // ---- alles andere: statische Datei aus /public ausliefern ----

@@ -9,6 +9,7 @@
   --film: #d6a24c;
   --serie: #4fa6a0;
   --game: #8b7fe0;
+  --edit: #d9667a;
 }
 
 * { box-sizing: border-box; }
@@ -157,6 +158,30 @@ main { padding: 32px 40px 80px; }
 .type-tag.film  { background: var(--film); }
 .type-tag.serie { background: var(--serie); }
 .type-tag.game  { background: var(--game); }
+.type-tag.edit  { background: var(--edit); }
+
+/* Edits: breitere Karte im 16:9-Format mit Play-Symbol */
+.cover-card.is-edit { grid-column: span 2; }
+.cover-card.is-edit .cover-art { aspect-ratio: 16 / 9; }
+
+.play-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(21, 20, 27, 0.72);
+  border: 1px solid rgba(237, 233, 227, 0.5);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  padding-left: 3px;
+  pointer-events: none;
+}
 
 .host-stamp {
   position: absolute;
@@ -234,6 +259,18 @@ main { padding: 32px 40px 80px; }
 .close:hover { color: var(--ink); }
 
 .ticket-body { padding: 0; }
+
+.ticket-video {
+  background: #000;
+  border-radius: 6px 6px 0 0;
+}
+.ticket-video video {
+  display: block;
+  width: 100%;
+  max-height: 62vh;
+  background: #000;
+}
+.ticket-top.no-cover { grid-template-columns: 1fr; }
 
 .ticket-top {
   display: grid;
@@ -407,6 +444,11 @@ main { padding: 32px 40px 80px; }
   main { padding: 22px 20px 60px; }
   .ticket-top { grid-template-columns: 1fr; }
   .ticket-cover { max-width: 160px; }
+}
+
+/* sehr schmale Bildschirme: Edit-Karte nicht breiter als eine Spalte */
+@media (max-width: 360px) {
+  .cover-card.is-edit { grid-column: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

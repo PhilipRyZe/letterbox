@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Letterbox – Admin</title>
-<link rel="icon" href="../Logo_PJ.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -28,11 +27,20 @@
           <option value="film">Film</option>
           <option value="serie">Serie</option>
           <option value="game">Game</option>
+          <option value="edit">Edit (Video)</option>
         </select>
         <input name="year" type="number" placeholder="Jahr" min="1900" max="2100" />
       </div>
       <input name="title" type="text" placeholder="Titel" required />
-      <input name="cover_url" type="url" placeholder="Cover-Bild-URL (optional)" />
+      <div class="video-field" id="video-field" hidden>
+        <label class="field-label" for="video-file">Video-Datei (MP4 oder WebM)</label>
+        <input id="video-file" type="file" accept="video/mp4,video/webm" />
+        <p class="field-hint" id="usage-note"></p>
+        <div class="upload-progress" id="upload-progress" hidden>
+          <div class="upload-bar" id="upload-bar"></div>
+        </div>
+      </div>
+      <input name="cover_url" type="url" placeholder="Cover-Bild-URL (optional – bei Edits wird automatisch ein Vorschaubild erzeugt)" />
       <textarea name="description" rows="2" placeholder="Kurzbeschreibung (optional)"></textarea>
       <div class="row">
         <select name="host_rating">
@@ -44,7 +52,7 @@
         </select>
       </div>
       <textarea name="host_note" rows="2" placeholder="Deine kurze Meinung (optional)"></textarea>
-      <button type="submit">Anlegen</button>
+      <button type="submit" id="create-submit">Anlegen</button>
       <p class="msg" id="create-msg"></p>
     </form>
   </section>

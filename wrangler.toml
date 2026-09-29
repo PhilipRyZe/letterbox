@@ -14,7 +14,15 @@ binding = "DB"
 database_name = "letterbox-db"
 database_id = "6141d732-311c-437a-8ec5-378552f11c15"
 
+# R2-Bucket für die Edits (Videos + automatisch erzeugte Vorschaubilder).
+# Der Bucket muss vor dem Deploy im Cloudflare-Dashboard angelegt sein.
+[[r2_buckets]]
+binding = "EDITS"
+bucket_name = "letterbox-edits"
+
 # Optional: zusätzliche Absicherung der Admin-API. Wenn gesetzt, muss die
 # von Cloudflare Access bestätigte E-Mail exakt hiermit übereinstimmen.
 [vars]
 ADMIN_EMAIL = "philipjanssen@web.de"
+# Öffentliche Adresse des Edits-Buckets (Custom Domain, ohne Slash am Ende).
+MEDIA_BASE_URL = "https://media.pjanssen.cc"

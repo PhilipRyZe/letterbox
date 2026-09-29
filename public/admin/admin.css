@@ -143,6 +143,34 @@
 }
 .admin-comment button:hover { color: #e08a7a; border-color: #e08a7a; }
 
+/* ---------- Video-Upload (Edits) ---------- */
+
+.video-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.video-field[hidden] { display: none; }
+
+.field-label { font-size: 13px; color: var(--muted); }
+.field-hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+.upload-progress {
+  height: 8px;
+  border-radius: 100px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.upload-progress[hidden] { display: none; }
+.upload-bar {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.15s ease;
+}
+
+.item-form button:disabled { opacity: 0.55; cursor: progress; }
+
 @media (max-width: 780px) {
   .admin-main { grid-template-columns: 1fr; padding: 22px 20px 60px; }
 }

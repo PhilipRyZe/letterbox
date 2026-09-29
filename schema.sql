@@ -1,16 +1,20 @@
 -- Letterbox – Schema für Cloudflare D1
 -- Anlegen mit: wrangler d1 execute letterbox-db --file=./schema.sql
+--
+-- Hinweis: Das ist der AKTUELLE Stand (inkl. Typ "edit" und video_url).
+-- Eine schon bestehende Datenbank wird einmalig mit migration.sql umgestellt.
 
 CREATE TABLE IF NOT EXISTS items (
   id          TEXT PRIMARY KEY,
-  type        TEXT NOT NULL CHECK (type IN ('film', 'serie', 'game')),
+  type        TEXT NOT NULL CHECK (type IN ('film', 'serie', 'game', 'edit')),
   title       TEXT NOT NULL,
   year        INTEGER,
   cover_url   TEXT,
   description TEXT,
   host_rating REAL CHECK (host_rating IS NULL OR (host_rating >= 1 AND host_rating <= 10)),
   host_note   TEXT,
-  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  video_url   TEXT
 );
 
 CREATE TABLE IF NOT EXISTS likes (

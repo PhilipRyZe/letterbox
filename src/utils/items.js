@@ -1,10 +1,14 @@
 // Gemeinsame Queries rund um Items, damit öffentliche und Admin-Routen
 // nicht dasselbe SQL doppelt pflegen.
 
+// Alle erlaubten Eintragstypen an EINER Stelle (öffentliche und Admin-Routen
+// nutzen dieselbe Liste).
+export const ITEM_TYPES = ["film", "serie", "game", "edit"];
+
 const LIST_SQL = `
   SELECT
     i.id, i.type, i.title, i.year, i.cover_url, i.description,
-    i.host_rating, i.host_note, i.created_at,
+    i.host_rating, i.host_note, i.created_at, i.video_url,
     COUNT(DISTINCT l.visitor_id) AS like_count,
     COUNT(DISTINCT r.visitor_id) AS rating_count,
     COUNT(DISTINCT c.id) AS comment_count,
@@ -55,6 +59,7 @@ function shapeItem(row) {
     title: row.title,
     year: row.year,
     cover_url: row.cover_url,
+    video_url: row.video_url,
     description: row.description,
     host_rating: row.host_rating,
     host_note: row.host_note,

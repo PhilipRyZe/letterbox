@@ -1,10 +1,10 @@
 import { json, error, readJson } from "../utils/http.js";
-import { listItems, getItem } from "../utils/items.js";
+import { listItems, getItem, ITEM_TYPES } from "../utils/items.js";
 
-// GET /api/items?type=film|serie|game
+// GET /api/items?type=film|serie|game|edit
 export async function handleListItems(request, env, url) {
   const type = url.searchParams.get("type");
-  if (type && !["film", "serie", "game"].includes(type)) {
+  if (type && !ITEM_TYPES.includes(type)) {
     return error("Ungültiger type-Filter.");
   }
   const items = await listItems(env.DB, { type });

@@ -11,7 +11,7 @@ function getVisitorId() {
 }
 const VISITOR_ID = getVisitorId();
 
-const TYPE_LABEL = { film: "Film", serie: "Serie", game: "Game" };
+const TYPE_LABEL = { film: "Film", serie: "Serie", game: "Game", edit: "Edit" };
 
 const shelfEl = document.getElementById("shelf");
 const emptyStateEl = document.getElementById("empty-state");
@@ -43,7 +43,7 @@ function renderShelf() {
 
   for (const item of items) {
     const card = document.createElement("button");
-    card.className = "cover-card";
+    card.className = "cover-card" + (item.type === "edit" ? " is-edit" : "");
     card.innerHTML = `
       <div class="cover-art">
         ${
@@ -52,6 +52,7 @@ function renderShelf() {
             : `<div class="placeholder-initial">${escapeHtml(item.title[0] || "?")}</div>`
         }
         <span class="type-tag ${item.type}"></span>
+        ${item.type === "edit" ? `<span class="play-badge" aria-hidden="true">▶</span>` : ""}
         ${item.host_rating ? `<span class="host-stamp">${item.host_rating}</span>` : ""}
       </div>
       <div class="cover-meta">
@@ -125,15 +126,29 @@ async function openTicket(id) {
 }
 
 function renderTicket(item) {
-  ticketBodyEl.innerHTML = `
-    <div class="ticket-top">
-      <div class="ticket-cover">
+  // Edits zeigen oben einen Video-Player statt des Poster-Covers.
+  const isEdit = item.type === "edit" && !!item.video_url;
+  const videoHtml = isEdit
+    ? `<div class="ticket-video">
+         <video controls playsinline preload="metadata"
+           ${item.cover_url ? `poster="${escapeAttr(item.cover_url)}"` : ""}
+           src="${escapeAttr(item.video_url)}"></video>
+       </div>`
+    : "";
+  const coverHtml = isEdit
+    ? ""
+    : `<div class="ticket-cover">
         ${
           item.cover_url
             ? `<img src="${escapeAttr(item.cover_url)}" alt="" />`
             : `<div class="placeholder-initial">${escapeHtml(item.title[0] || "?")}</div>`
         }
-      </div>
+      </div>`;
+
+  ticketBodyEl.innerHTML = `
+    ${videoHtml}
+    <div class="ticket-top${isEdit ? " no-cover" : ""}">
+      ${coverHtml}
       <div>
         <h2 class="ticket-title">${escapeHtml(item.title)}</h2>
         <div class="ticket-sub">${TYPE_LABEL[item.type]}${item.year ? " · " + item.year : ""}</div>
