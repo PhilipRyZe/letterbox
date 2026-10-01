@@ -24,11 +24,158 @@ function formatBytes(bytes) {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
+// ---------- Frame-Auswahl für das Vorschaubild ----------
+
+function framePickerHtml() {
+  return `
+    <span class="field-label">Vorschaubild: Bild im Video auswählen</span>
+    <video data-pick-video muted playsinline></video>
+    <input type="range" data-pick-slider min="0" max="0" step="0.01" value="0" />
+    <div class="picker-row">
+      <div class="picker-steps">
+        <button type="button" class="btn-ghost" data-pick-prev>◀ 0,1 s</button>
+        <button type="button" class="btn-ghost" data-pick-next>0,1 s ▶</button>
+        <span class="picker-time" data-pick-time>0:00,00</span>
+      </div>
+      <canvas class="picker-preview" data-pick-preview width="240" height="240"></canvas>
+    </div>
+    <p class="field-hint" data-pick-msg>Das angezeigte Bild wird als Vorschau genutzt. Rechts siehst du den quadratischen Ausschnitt (1:1), wie er auf der Karte erscheint.</p>
+  `;
+}
+
+// Steuert Video + Schieberegler + Vorschau innerhalb von `root`.
+// capture() liefert das aktuell angezeigte Bild als JPEG-Blob (oder null).
+function createFramePicker(root) {
+  const video = root.querySelector("[data-pick-video]");
+  const slider = root.querySelector("[data-pick-slider]");
+  const prevBtn = root.querySelector("[data-pick-prev]");
+  const nextBtn = root.querySelector("[data-pick-next]");
+  const timeEl = root.querySelector("[data-pick-time]");
+  const previewEl = root.querySelector("[data-pick-preview]");
+  const msgEl = root.querySelector("[data-pick-msg]");
+  const defaultMsg = msgEl.textContent;
+
+  let ready = false;
+  let objectUrl = null;
+
+  function fmt(t) {
+    const m = Math.floor(t / 60);
+    const s = (t - m * 60).toFixed(2).replace(".", ",").padStart(5, "0");
+    return `${m}:${s}`;
+  }
+
+  function drawPreview() {
+    if (!video.videoWidth) return;
+    const s = Math.min(video.videoWidth, video.videoHeight);
+    const sx = (video.videoWidth - s) / 2;
+    const sy = (video.videoHeight - s) / 2;
+    previewEl.getContext("2d").drawImage(video, sx, sy, s, s, 0, 0, previewEl.width, previewEl.height);
+  }
+
+  function seekTo(t) {
+    const max = video.duration || 0;
+    const clamped = Math.max(0, Math.min(max, t));
+    video.currentTime = clamped;
+    slider.value = clamped;
+    timeEl.textContent = fmt(clamped);
+  }
+
+  video.addEventListener("loadedmetadata", () => {
+    slider.max = video.duration || 0;
+    seekTo(Math.min(1, (video.duration || 1) / 2));
+  });
+  video.addEventListener("seeked", () => {
+    ready = true;
+    drawPreview();
+  });
+  video.addEventListener("error", () => {
+    if (!video.getAttribute("src")) return;
+    ready = false;
+    msgEl.textContent =
+      "Video konnte nicht geladen werden. (Bei bestehenden Edits: Im R2-Bucket muss CORS für diese Seite erlaubt sein.)";
+    msgEl.classList.add("is-error");
+  });
+  slider.addEventListener("input", () => seekTo(Number(slider.value)));
+  prevBtn.addEventListener("click", () => seekTo(video.currentTime - 0.1));
+  nextBtn.addEventListener("click", () => seekTo(video.currentTime + 0.1));
+
+  function load(src, opts = {}) {
+    ready = false;
+    msgEl.textContent = defaultMsg;
+    msgEl.classList.remove("is-error");
+    if (opts.crossOrigin) video.crossOrigin = "anonymous";
+    else video.removeAttribute("crossorigin");
+    video.preload = opts.preload || "auto";
+    video.src = src;
+    video.load();
+  }
+
+  function releaseObjectUrl() {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = null;
+  }
+
+  return {
+    loadFile(file) {
+      releaseObjectUrl();
+      objectUrl = URL.createObjectURL(file);
+      load(objectUrl);
+    },
+    load,
+    clear() {
+      ready = false;
+      releaseObjectUrl();
+      video.removeAttribute("src");
+      video.load();
+      slider.value = 0;
+      previewEl.getContext("2d").clearRect(0, 0, previewEl.width, previewEl.height);
+    },
+    async capture() {
+      if (!ready || !video.videoWidth) return null;
+      if (video.seeking) {
+        await new Promise((r) => video.addEventListener("seeked", r, { once: true }));
+      }
+      try {
+        const scale = Math.min(1, 1280 / video.videoWidth);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(video.videoWidth * scale);
+        canvas.height = Math.round(video.videoHeight * scale);
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        return await new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.85));
+      } catch {
+        return null; // z. B. CORS fehlt -> Canvas ist gesperrt
+      }
+    },
+  };
+}
+
+// Picker im "Neuer Eintrag"-Formular
+const pickerSlot = document.getElementById("frame-picker-slot");
+pickerSlot.innerHTML = framePickerHtml();
+const createPicker = createFramePicker(pickerSlot);
+
+function resetCreatePicker() {
+  createPicker.clear();
+  pickerSlot.hidden = true;
+}
+
 // Bei Typ "Edit" erscheint das Feld für die Video-Datei.
 form.elements.type.addEventListener("change", () => {
   const isEdit = form.elements.type.value === "edit";
   videoField.hidden = !isEdit;
   if (isEdit) loadUsage();
+  else resetCreatePicker();
+});
+
+// Sobald ein Video gewählt ist, erscheint die Frame-Auswahl.
+videoFileInput.addEventListener("change", () => {
+  const file = videoFileInput.files[0];
+  if (file) {
+    pickerSlot.hidden = false;
+    createPicker.loadFile(file);
+  } else {
+    resetCreatePicker();
+  }
 });
 
 async function loadUsage() {
@@ -207,7 +354,9 @@ form.addEventListener("submit", async (e) => {
 
       if (!body.cover_url) {
         setMsg("Erzeuge Vorschaubild…");
-        const posterBlob = await makePoster(file);
+        // Zuerst der im Picker gewählte Frame, sonst Automatik als Rückfall
+        let posterBlob = await createPicker.capture();
+        if (!posterBlob) posterBlob = await makePoster(file);
         if (posterBlob) {
           const poster = await uploadPoster(posterBlob);
           body.cover_url = poster.url;
@@ -239,6 +388,7 @@ form.addEventListener("submit", async (e) => {
 
     form.reset();
     videoField.hidden = true;
+    resetCreatePicker();
     uploadProgress.hidden = true;
     setMsg("Angelegt.", "ok");
     loadList();
@@ -283,7 +433,7 @@ function rowHtml(item) {
   return `
     <div class="admin-row-wrap">
       <div class="admin-row">
-        <div class="thumb">
+        <div class="thumb${item.type === "edit" ? " is-edit" : ""}">
           ${item.cover_url ? `<img src="${item.cover_url}" alt="" />` : ""}
         </div>
         <div class="info">
@@ -308,10 +458,22 @@ function toggleEdit(id) {
   if (wasHidden) {
     const item = currentItems.find((i) => i.id === id);
     panel.innerHTML = editFormHtml(item);
-    panel.querySelector("form").addEventListener("submit", (e) => saveEdit(e, id));
+    const ctx = { picker: null };
+    panel.querySelector("form").addEventListener("submit", (e) => saveEdit(e, id, item, ctx));
     panel.querySelector("[data-cancel-edit]").addEventListener("click", () => {
+      if (ctx.picker) ctx.picker.clear();
       panel.hidden = true;
     });
+    const openBtn = panel.querySelector("[data-open-picker]");
+    if (openBtn) {
+      openBtn.addEventListener("click", () => {
+        const root = panel.querySelector("[data-picker]");
+        root.hidden = false;
+        openBtn.hidden = true;
+        ctx.picker = createFramePicker(root);
+        ctx.picker.load(item.video_url, { crossOrigin: true, preload: "metadata" });
+      });
+    }
   }
 }
 
@@ -334,6 +496,12 @@ function editFormHtml(item) {
           ? `<input name="video_url" type="url" placeholder="Video-URL" value="${escapeAttr(item.video_url || "")}" />`
           : ""
       }
+      ${
+        item.type === "edit" && item.video_url
+          ? `<button type="button" class="btn-ghost" data-open-picker>Vorschaubild aus dem Video wählen</button>
+             <div class="frame-picker" data-picker hidden>${framePickerHtml()}</div>`
+          : ""
+      }
       <textarea name="description" rows="2" placeholder="Kurzbeschreibung (optional)">${escapeHtml(item.description || "")}</textarea>
       <div class="row">
         <select name="host_rating">
@@ -353,7 +521,21 @@ function editFormHtml(item) {
   `;
 }
 
-async function saveEdit(e, id) {
+// Liegt das Vorschaubild in unserem Bucket (gleiche Domain wie das Video,
+// Ordner posters/)? Dann gibt es den Schlüssel zurück, sonst null.
+function ownPosterKey(coverUrl, videoUrl) {
+  try {
+    const c = new URL(coverUrl);
+    const v = new URL(videoUrl);
+    if (c.origin !== v.origin) return null;
+    const key = decodeURIComponent(c.pathname.slice(1));
+    return /^posters\/[A-Za-z0-9._-]+$/.test(key) ? key : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveEdit(e, id, item, ctx) {
   e.preventDefault();
   const formEl = e.currentTarget;
   const msgEl = formEl.querySelector("[data-edit-msg]");
@@ -369,6 +551,29 @@ async function saveEdit(e, id) {
   };
   if (fd.has("video_url")) body.video_url = fd.get("video_url") || null;
 
+  // Neues Vorschaubild aus dem gewählten Frame
+  let newPosterKey = null;
+  if (ctx && ctx.picker) {
+    msgEl.textContent = "Erzeuge Vorschaubild…";
+    msgEl.className = "msg";
+    const blob = await ctx.picker.capture();
+    if (!blob) {
+      msgEl.textContent =
+        "Das Bild konnte nicht aus dem Video gelesen werden (vermutlich fehlt CORS im R2-Bucket).";
+      msgEl.className = "msg is-error";
+      return;
+    }
+    try {
+      const poster = await uploadPoster(blob);
+      body.cover_url = poster.url;
+      newPosterKey = poster.key;
+    } catch (err) {
+      msgEl.textContent = err.message || "Vorschaubild-Upload fehlgeschlagen.";
+      msgEl.className = "msg is-error";
+      return;
+    }
+  }
+
   msgEl.textContent = "Speichere…";
   msgEl.className = "msg";
   const res = await fetch(`/admin/api/items/${id}`, {
@@ -378,8 +583,14 @@ async function saveEdit(e, id) {
   });
 
   if (res.ok) {
+    // altes, nicht mehr gebrauchtes Vorschaubild aus dem Bucket entfernen
+    if (newPosterKey && item.cover_url && item.video_url) {
+      const oldKey = ownPosterKey(item.cover_url, item.video_url);
+      if (oldKey && oldKey !== newPosterKey) discardUploads([oldKey]);
+    }
     await loadList();
   } else {
+    if (newPosterKey) discardUploads([newPosterKey]);
     const data = await res.json().catch(() => ({}));
     msgEl.textContent = data.error || "Fehler beim Speichern.";
     msgEl.className = "msg is-error";
