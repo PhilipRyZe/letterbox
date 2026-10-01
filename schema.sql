@@ -1,7 +1,7 @@
 -- Letterbox – Schema für Cloudflare D1
 -- Anlegen mit: wrangler d1 execute letterbox-db --file=./schema.sql
 --
--- Hinweis: Das ist der AKTUELLE Stand (inkl. Typ "edit" und video_url).
+-- Hinweis: Das ist der AKTUELLE Stand (inkl. Typ "edit", video_url und tiktok_url).
 -- Eine schon bestehende Datenbank wird einmalig mit migration.sql umgestellt.
 
 CREATE TABLE IF NOT EXISTS items (
@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS items (
   host_rating REAL CHECK (host_rating IS NULL OR (host_rating >= 1 AND host_rating <= 10)),
   host_note   TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-  video_url   TEXT
+  video_url   TEXT,
+  tiktok_url  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS likes (
