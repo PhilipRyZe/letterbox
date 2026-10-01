@@ -8,6 +8,7 @@ const FIELDS = [
   "year",
   "cover_url",
   "video_url",
+  "tiktok_url",
   "description",
   "host_rating",
   "host_note",
@@ -36,11 +37,14 @@ export async function handleCreateItem(request, env) {
   if (body.video_url && !isHttpsUrl(body.video_url)) {
     return error("Ungültige Video-URL.");
   }
+  if (body.tiktok_url && !isHttpsUrl(body.tiktok_url)) {
+    return error("Ungültiger TikTok-Link (muss mit https:// beginnen).");
+  }
 
   const id = crypto.randomUUID();
   await env.DB.prepare(
-    `INSERT INTO items (id, type, title, year, cover_url, video_url, description, host_rating, host_note)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO items (id, type, title, year, cover_url, video_url, tiktok_url, description, host_rating, host_note)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       id,
@@ -49,6 +53,7 @@ export async function handleCreateItem(request, env) {
       body.year || null,
       body.cover_url || null,
       body.video_url || null,
+      body.tiktok_url || null,
       body.description || null,
       body.host_rating ?? null,
       body.host_note || null
@@ -71,6 +76,9 @@ export async function handleUpdateItem(request, env, id) {
   }
   if (body.video_url && !isHttpsUrl(body.video_url)) {
     return error("Ungültige Video-URL.");
+  }
+  if (body.tiktok_url && !isHttpsUrl(body.tiktok_url)) {
+    return error("Ungültiger TikTok-Link (muss mit https:// beginnen).");
   }
 
   const updates = FIELDS.filter((f) => f in body);
