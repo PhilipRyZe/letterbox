@@ -125,7 +125,23 @@ async function openTicket(id) {
   loadComments(id);
 }
 
+// TikTok-Logo (einfarbig, übernimmt die Textfarbe)
+const TIKTOK_ICON = `<svg class="tiktok-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>`;
+
 function renderTicket(item) {
+  // Link zum Original auf TikTok: Logo + kurzer Text + Pfeil, öffnet im neuen Tab.
+  const tiktokHtml =
+    item.tiktok_url && /^https?:\/\//i.test(item.tiktok_url)
+      ? `<div class="ticket-links">
+           <a class="tiktok-link" href="${escapeAttr(item.tiktok_url)}"
+              target="_blank" rel="noopener noreferrer nofollow"
+              title="Original auf TikTok ansehen (öffnet TikTok in neuem Tab)"
+              aria-label="Original auf TikTok ansehen (öffnet in neuem Tab)">
+             ${TIKTOK_ICON}<span>Auf TikTok ansehen</span><span class="ext" aria-hidden="true">↗</span>
+           </a>
+         </div>`
+      : "";
+
   // Edits zeigen oben einen Video-Player statt des Poster-Covers.
   const isEdit = item.type === "edit" && !!item.video_url;
   const videoHtml = isEdit
@@ -152,7 +168,8 @@ function renderTicket(item) {
       <div>
         <h2 class="ticket-title">${escapeHtml(item.title)}</h2>
         <div class="ticket-sub">${TYPE_LABEL[item.type]}${item.year ? " · " + item.year : ""}</div>
-        ${item.description ? `<p class="ticket-desc">${escapeHtml(item.description)}</p>` : ""}
+        ${item.description ? `<p class="ticket-desc">${linkify(item.description)}</p>` : ""}
+        ${tiktokHtml}
 
         <hr class="tear-line" />
 
@@ -166,7 +183,7 @@ function renderTicket(item) {
             <div class="value">${item.avg_rating ? item.avg_rating + "/10" : "–"}</div>
           </div>
         </div>
-        ${item.host_note ? `<p class="ticket-desc" style="margin-top:12px">„${escapeHtml(item.host_note)}“ – Philip</p>` : ""}
+        ${item.host_note ? `<p class="ticket-desc" style="margin-top:12px">„${linkify(item.host_note)}“ – Philip</p>` : ""}
 
         <div class="actions">
           <button class="like-btn ${item.liked_by_me ? "is-liked" : ""}" id="like-btn" data-id="${item.id}">
@@ -296,6 +313,19 @@ function escapeHtml(str) {
   }[c]));
 }
 function escapeAttr(str) { return escapeHtml(str); }
+
+// Macht aus http(s)-Adressen im Text anklickbare Links (öffnen im neuen Tab).
+// Der Text wird zuerst maskiert, erst danach werden Links eingesetzt – so
+// kann niemand HTML einschleusen.
+function linkify(text) {
+  return escapeHtml(text).replace(/https?:\/\/[^\s<]+/g, (match) => {
+    // Satzzeichen am Ende gehören nicht zum Link
+    const trailing = match.match(/(?:[.,;:!?)\]]|&quot;|&#39;|&gt;)+$/);
+    const tail = trailing ? trailing[0] : "";
+    const url = tail ? match.slice(0, -tail.length) : match;
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer nofollow">${url}</a>${tail}`;
+  });
+}
 
 function formatDate(iso) {
   const d = new Date(iso.replace(" ", "T") + "Z");
