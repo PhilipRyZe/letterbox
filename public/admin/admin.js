@@ -338,6 +338,7 @@ form.addEventListener("submit", async (e) => {
     title: fd.get("title"),
     year: fd.get("year") ? Number(fd.get("year")) : null,
     cover_url: fd.get("cover_url") || null,
+    tiktok_url: type === "edit" ? fd.get("tiktok_url") || null : null,
     description: fd.get("description") || null,
     host_rating: fd.get("host_rating") ? Number(fd.get("host_rating")) : null,
     host_note: fd.get("host_note") || null,
@@ -497,6 +498,11 @@ function editFormHtml(item) {
           : ""
       }
       ${
+        item.type === "edit"
+          ? `<input name="tiktok_url" type="url" placeholder="TikTok-Link (optional)" value="${escapeAttr(item.tiktok_url || "")}" />`
+          : ""
+      }
+      ${
         item.type === "edit" && item.video_url
           ? `<button type="button" class="btn-ghost" data-open-picker>Vorschaubild aus dem Video wählen</button>
              <div class="frame-picker" data-picker hidden>${framePickerHtml()}</div>`
@@ -550,6 +556,7 @@ async function saveEdit(e, id, item, ctx) {
     host_note: fd.get("host_note") || null,
   };
   if (fd.has("video_url")) body.video_url = fd.get("video_url") || null;
+  if (fd.has("tiktok_url")) body.tiktok_url = fd.get("tiktok_url") || null;
 
   // Neues Vorschaubild aus dem gewählten Frame
   let newPosterKey = null;
