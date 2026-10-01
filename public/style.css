@@ -160,9 +160,9 @@ main { padding: 32px 40px 80px; }
 .type-tag.game  { background: var(--game); }
 .type-tag.edit  { background: var(--edit); }
 
-/* Edits: breitere Karte im 16:9-Format mit Play-Symbol */
-.cover-card.is-edit { grid-column: span 2; }
-.cover-card.is-edit .cover-art { aspect-ratio: 16 / 9; }
+/* Edits: quadratische Karte (1:1) mit Play-Symbol. Das Vorschaubild wird
+   mittig zugeschnitten (object-fit: cover), egal welches Format es hat. */
+.cover-card.is-edit .cover-art { aspect-ratio: 1 / 1; }
 
 .play-badge {
   position: absolute;
@@ -444,11 +444,6 @@ main { padding: 32px 40px 80px; }
   main { padding: 22px 20px 60px; }
   .ticket-top { grid-template-columns: 1fr; }
   .ticket-cover { max-width: 160px; }
-}
-
-/* sehr schmale Bildschirme: Edit-Karte nicht breiter als eine Spalte */
-@media (max-width: 360px) {
-  .cover-card.is-edit { grid-column: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
