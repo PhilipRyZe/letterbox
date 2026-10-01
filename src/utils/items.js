@@ -8,7 +8,7 @@ export const ITEM_TYPES = ["film", "serie", "game", "edit"];
 const LIST_SQL = `
   SELECT
     i.id, i.type, i.title, i.year, i.cover_url, i.description,
-    i.host_rating, i.host_note, i.created_at, i.video_url,
+    i.host_rating, i.host_note, i.created_at, i.video_url, i.tiktok_url,
     COUNT(DISTINCT l.visitor_id) AS like_count,
     COUNT(DISTINCT r.visitor_id) AS rating_count,
     COUNT(DISTINCT c.id) AS comment_count,
@@ -60,6 +60,7 @@ function shapeItem(row) {
     year: row.year,
     cover_url: row.cover_url,
     video_url: row.video_url,
+    tiktok_url: row.tiktok_url,
     description: row.description,
     host_rating: row.host_rating,
     host_note: row.host_note,
